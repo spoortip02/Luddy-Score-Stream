@@ -1,0 +1,375 @@
+openapi: 3.0.0
+info:
+  title: Luddy Hackathon Leaderboard API
+  description: REST API for managing hackathon team scores and leaderboard
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+paths:
+  /:
+    get:
+      summary: Home route
+      description: Check if the API is running
+      responses:
+        "200":
+          description: API is running
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Luddy Hackathon Leaderboard API is running
+
+  /register:
+    post:
+      summary: Register a new judge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, adminSecret]
+              properties:
+                username:
+                  type: string
+                  example: judge1
+                password:
+                  type: string
+                  example: mypassword
+                adminSecret:
+                  type: string
+                  example: luddy2026
+      responses:
+        "201":
+          description: Judge registered successfully
+        "400":
+          description: Missing required fields
+        "403":
+          description: Invalid admin secret
+        "409":
+          description: Username already taken
+
+  /login:
+    post:
+      summary: Judge login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: judge1
+                password:
+                  type: string
+                  example: mypassword
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  role:
+                    type: string
+                  username:
+                    type: string
+        "400":
+          description: Missing fields
+        "401":
+          description: Invalid credentials
+
+  /add:
+    post:
+      summary: Add a score submission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [teamName, judgeId, innovation, technical, presentation, impact]
+              properties:
+                teamName:
+                  type: string
+                  example: Team Alpha
+                judgeId:
+                  type: string
+                  example: judge1
+                innovation:
+                  type: number
+                  example: 25
+                technical:
+                  type: number
+                  example: 30
+                presentation:
+                  type: number
+                  example: 20
+                impact:
+                  type: number
+                  example: 25
+      responses:
+        "201":
+          description: Score submitted successfully
+        "400":
+          description: Missing required fields
+
+  /leaderboard:
+    get:
+      summary: Get top 10 leaderboard
+      description: Returns top 10 teams ranked by total score
+      responses:
+        "200":
+          description: Leaderboard data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    rank:
+                      type: integer
+                    teamName:
+                      type: string
+                    totalScore:
+                      type: number
+                    averageScore:
+                      type: number
+                    submissionCount:
+                      type: integer
+                    status:
+                      type: string
+                      enum: [Complete, Pending]
+
+  /remove/{teamName}:
+    delete:
+      summary: Remove all submissions for a team
+      parameters:
+        - name: teamName
+          in: path
+          required: true
+          schema:
+            type: string
+          example: Team Alpha
+      responses:
+        "200":
+          description: Submissions removed successfully
+        "404":
+          description: Team not found
+
+  /update/{id}:
+    put:
+      summary: Update a submission by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 661f1b2e3c4d5e6f7a8b9c0d
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [innovation, technical, presentation, impact]
+              properties:
+                innovation:
+                  type: number
+                technical:
+                  type: number
+                presentation:
+                  type: number
+                impact:
+                  type: number
+      responses:
+        "200":
+          description: Score updated successfully
+        "400":
+          description: Missing required fields
+        "404":
+          description: Submission not found
+
+  /delete/{id}:
+    delete:
+      summary: Delete a submission by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 661f1b2e3c4d5e6f7a8b9c0d
+      responses:
+        "200":
+          description: Submission deleted successfully
+        "404":
+          description: Submission not found
+
+  /info:
+    get:
+      summary: Get statistics for all submissions
+      description: Returns mean, median, quartiles, standard deviation and score distribution
+      responses:
+        "200":
+          description: Statistics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSubmissions:
+                    type: integer
+                  mean:
+                    type: number
+                  median:
+                    type: number
+                  min:
+                    type: number
+                  max:
+                    type: number
+                  quartiles:
+                    type: object
+                    properties:
+                      q1:
+                        type: number
+                      q2:
+                        type: number
+                      q3:
+                        type: number
+                  standardDeviation:
+                    type: number
+                  distribution:
+                    type: object
+                    properties:
+                      low:
+                        type: integer
+                      medium:
+                        type: integer
+                      high:
+                        type: integer
+
+  /performance:
+    get:
+      summary: Get API performance metrics
+      description: Returns average endpoint execution time and request logs
+      responses:
+        "200":
+          description: Performance data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRequests:
+                    type: integer
+                  averageExecutionTimeMs:
+                    type: number
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        method:
+                          type: string
+                        endpoint:
+                          type: string
+                        duration:
+                          type: number
+
+  /history:
+    get:
+      summary: Get submission history with filtering
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: Limit number of results
+          example: 10
+        - name: judgeId
+          in: query
+          schema:
+            type: string
+          description: Filter by judge ID
+          example: judge1
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter from this date
+          example: "2026-04-01"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter to this date
+          example: "2026-04-18"
+      responses:
+        "200":
+          description: History data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRecords:
+                    type: integer
+                  history:
+                    type: array
+                    items:
+                      type: object
+
+  /dashboard:
+    get:
+      summary: Get full dashboard data
+      description: Returns summary, top 3 teams, recent updates, stats and full leaderboard
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summary:
+                    type: object
+                    properties:
+                      totalTeams:
+                        type: integer
+                      totalJudges:
+                        type: integer
+                      lastUpdated:
+                        type: string
+                  topThree:
+                    type: array
+                  recentUpdates:
+                    type: array
+                  stats:
+                    type: object
+                  tableData:
+                    type: array
+
+  /submissions:
+    get:
+      summary: Get all submissions
+      responses:
+        "200":
+          description: All submissions
+          content:
+            application/json:
+              schema:
+                type: array
